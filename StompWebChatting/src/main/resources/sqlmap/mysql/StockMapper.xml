@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="com.skp.bmwcd.dao.StockMapper">
+    
+    <!-- Stock 리스트 리턴 -->
+    <select id="getStockList" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+    	SELECT 
+			M.hname,
+			M.ename,
+			C.stockCode,
+			SUBSTRING(M.shortCode, 2, 7) AS shortCode,
+			C.marketCode,
+			C.price, 
+			DATE_FORMAT(C.date, '%Y-%m-%d %H:%i:%s') AS date,
+			D.price AS previousClose
+		FROM bcd_stock_master M,
+		     ( SELECT stockCode, marketCode, price, date, diffCode, updatedDate, volume
+		       FROM bcd_price_day
+		       WHERE marketCode = #{marketCode}
+		       	 AND date = ( SELECT MAX(date) FROM bcd_price_day )
+		     ) C, 
+		     ( SELECT A.stockCode, A.marketCode, A.price, A.date
+		       FROM bcd_price_day A,
+		            ( SELECT stockCode, marketCode, MAX(date) AS date
+		              FROM bcd_price_day
+		              WHERE marketCode = #{marketCode}
+		                AND date &lt; ( SELECT MAX(date) FROM bcd_price_day )
+		              GROUP BY stockCode
+			        ) B
+		       WHERE A.stockCode = B.stockCode 
+				 AND A.marketCode = B.marketCode 
+				 AND A.date = B.date
+		     ) D
+		WHERE M.stockCode = C.stockCode
+		  AND M.marketCode = C.marketCode
+		  AND C.stockCode = D.stockCode
+		  AND C.marketCode = D.marketCode
+		  AND M.date = ( SELECT MAX(date) FROM bcd_stock_master )
+		ORDER BY 
+			<choose>
+			    <when test="sortBy != null and order == null">
+			        ${sortBy} ASC, shortCode ASC
+			    </when>
+			    <when test="sortBy == null and order != null">
+			        shortCode ${order}
+			    </when>
+			    <when test="sortBy != null and order != null">
+			        ${sortBy} ${order}, shortCode ASC
+			    </when>
+			    <otherwise>
+			        shortCode ASC
+			    </otherwise>
+			</choose>
+		<if test="limit >= 0">
+			LIMIT ${limit}
+		</if>
+    </select>
+    
+    <!-- Stock 검색 리스트 리턴 -->
+    <select id="getStockSearchList" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+    	SELECT 
+			M.hname,
+			M.ename,
+			C.stockCode,
+			SUBSTRING(M.shortCode, 2, 7) AS shortCode,
+			C.marketCode,
+			C.price, 
+			DATE_FORMAT(C.date, '%Y-%m-%d %H:%i:%s') AS date,
+			D.price AS previousClose
+		FROM bcd_stock_master M,
+		     ( SELECT stockCode, marketCode, price, date, diffCode, updatedDate, volume
+		       FROM bcd_price_day
+		       WHERE date = ( SELECT MAX(date) FROM bcd_price_day )
+		     ) C, 
+		     ( SELECT A.stockCode, A.marketCode, A.price, A.date
+		       FROM bcd_price_day A,
+		            ( SELECT stockCode, marketCode, MAX(date) AS date
+		              FROM bcd_price_day
+		              WHERE date &lt; ( SELECT MAX(date) FROM bcd_price_day )
+		              GROUP BY stockCode
+			        ) B
+		       WHERE A.stockCode = B.stockCode 
+				 AND A.marketCode = B.marketCode 
+				 AND A.date = B.date
+		     ) D
+		WHERE M.stockCode = C.stockCode
+		  AND M.marketCode = C.marketCode
+		  AND C.stockCode = D.stockCode
+		  AND C.marketCode = D.marketCode
+		  AND ( UPPER(M.stockCode) LIKE CONCAT('%', UPPER(#{search}), '%') OR
+		  		UPPER(M.hname) LIKE CONCAT('%', UPPER(#{search}), '%') OR
+		  		UPPER(M.ename) LIKE CONCAT('%', UPPER(#{search}), '%') OR
+		  		UPPER(M.chosung) LIKE CONCAT('%', UPPER(#{search}), '%') OR
+		  		shortCode LIKE CONCAT('%', #{search}, '%') )
+		  AND M.date = ( SELECT MAX(date) FROM bcd_stock_master )
+		ORDER BY 
+			<choose>
+			    <when test="sortBy != null and order == null">
+			        ${sortBy} ASC, marketCode ASC, shortCode ASC
+			    </when>
+			    <when test="sortBy == null and order != null">
+			        shortCode ${order}, marketCode ASC
+			    </when>
+			    <when test="sortBy != null and order != null">
+			        ${sortBy} ${order}, marketCode ASC, shortCode ASC
+			    </when>
+			    <otherwise>
+			        marketCode ASC, shortCode ASC
+			    </otherwise>
+			</choose>
+		<if test="limit >= 0">
+			LIMIT ${limit}
+		</if>
+    </select>
+    
+    <!-- Stock 상세 리턴 -->
+    <select id="getStockDetail" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+        SELECT
+			P.marketCode,
+			P.stockCode,
+			SUBSTRING(M.shortCode, 2, 7) AS shortCode,
+			M.hname,
+			M.ename,
+			M.nontradable,
+			P.open,
+			P.high,
+			P.low,
+			P.price,
+			P.volume,
+			( SELECT
+				  price
+			  FROM bcd_price_day
+			  WHERE date &lt; P.date
+			    AND stockCode = #{stockCode}
+			  ORDER BY date DESC
+			  LIMIT 1 
+			) AS previousClose,
+			( SELECT 
+				  IF( DATE_FORMAT(T.date, '%Y-%m-%d') = SUBSTRING(#{nowDateTime}, 1, 10),
+					  IF( ( SELECT COUNT(date)
+					        FROM bcd_index
+				            WHERE marketCode = #{marketCode}
+				              AND date > #{nowDateTime} ) = 0, 'Close', 'Open' ),
+					 'Close' )
+			  FROM ( SELECT 
+						   I.date AS date
+					 FROM bcd_index I, bcd_market_master S
+					 WHERE I.marketCode =  S.marketCode
+					   AND date &lt;= #{nowDateTime}
+					   AND I.marketCode = #{marketCode}
+					 ORDER BY date DESC 
+					 LIMIT 1 ) AS T 
+			) AS marketStatus,
+			DATE_FORMAT(P.updatedDate, '%Y-%m-%d %H:%i:%s') AS updatedDate
+		FROM bcd_price_day P, bcd_stock_master M
+		WHERE P.marketCode = #{marketCode}
+		  AND P.stockCode = M.stockCode
+		  AND P.stockCode = #{stockCode}
+		  AND P.date &lt;= ( SELECT MAX(date) FROM bcd_price_day  )
+		  AND M.date = ( SELECT MAX(date) FROM bcd_stock_master )
+		ORDER BY P.date DESC
+		LIMIT 1
+    </select>
+    
+    <!-- 가격, 거래량등 수치를 제외한 종목 상세 리턴 -->
+    <select id="getExcludePriceStockDetail" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+        SELECT
+			S.marketCode,
+			S.stockCode,
+			SUBSTRING(S.shortCode, 2, 7) AS shortCode,
+			S.hname,
+			S.ename,
+			S.nontradable,
+			( SELECT 
+				  IF( DATE_FORMAT(T.date, '%Y-%m-%d') = SUBSTRING(#{nowDateTime}, 1, 10),
+					  IF( ( SELECT COUNT(date)
+					        FROM bcd_index
+				            WHERE marketCode = #{marketCode}
+				              AND date > #{nowDateTime} ) = 0, 'Close', 'Open' ),
+					 'Close' )
+				FROM ( SELECT 
+						   I.date AS date
+					   FROM bcd_index I, bcd_market_master M
+					   WHERE I.marketCode =  M.marketCode
+					   	 AND I.marketCode = #{marketCode}
+						 AND date &lt;= #{nowDateTime}
+					   ORDER BY date DESC 
+					   LIMIT 1 ) AS T 
+			) AS marketStatus,
+			( SELECT
+				  DATE_FORMAT(MAX(date), '%Y-%m-%d %H:%i:%s')
+			  FROM bcd_index_minute
+			  WHERE marketCode = #{marketCode}
+			    AND DATE_FORMAT(date, '%Y-%m-%d') = ( SELECT DATE_FORMAT(MAX(date), '%Y-%m-%d') FROM bcd_index_minute )
+			) AS updatedDate
+		FROM bcd_stock_master S
+		WHERE S.marketCode = #{marketCode}
+		  AND S.stockCode = #{stockCode}
+		  AND S.date = ( SELECT MAX(date) FROM bcd_stock_master )
+    </select>
+    
+    <!-- Stock 분봉 데이터 리턴 -->
+    <select id="getStockMinute" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+        SELECT
+			P.stockCode,
+			P.marketCode,
+			SUBSTRING(S.shortCode, 2, 7) AS shortCode,
+			S.hname AS hname,
+			S.ename AS ename,
+			DATE_FORMAT(P.date, '%Y-%m-%d %H:%i:%s') AS date,
+			P.price,
+			P.volume,
+			S.nontradable
+		FROM bcd_price_minute P, bcd_stock_master S
+		WHERE P.marketCode = S.marketCode
+		  AND P.stockCode = S.stockCode
+		  AND P.marketCode = #{marketCode}
+		  AND P.stockCode = #{stockCode}
+		  AND DATE_FORMAT(P.date, '%Y-%m-%d %H:%i:%s') BETWEEN #{startDate} AND #{endDate}
+		  AND S.date = ( SELECT MAX(date) FROM bcd_stock_master )
+		ORDER BY P.date ASC
+    </select>
+    
+    <!-- 종목의 장 시작 데이터 리턴 -->
+    <select id="getOpenPrice" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+        SELECT 
+			P.stockCode,
+			P.marketCode,
+			SUBSTRING(S.shortCode, 2, 7) AS shortCode,
+			S.hname AS hname,
+			S.ename AS ename,
+			P.open,
+			P.diffCode,
+			S.nontradable
+		FROM bcd_price P, bcd_stock_master S
+		WHERE P.stockCode = S.stockCode
+		  AND P.stockCode = #{stockCode}
+		  AND P.date = ( SELECT MIN(date)
+					     FROM bcd_price
+					     WHERE stockCode = #{stockCode}
+						   AND DATE_FORMAT(date, '%Y-%m-%d') = #{date} )
+    </select>
+    
+    <!-- 전날 마지막 데이터 리턴 -->
+    <select id="getPreviousClosePrice" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+        SELECT 
+			P.stockCode,
+			P.marketCode,
+			SUBSTRING(S.shortCode, 2, 7) AS shortCode,
+			S.hname,
+			S.ename,
+			P.diffCode,
+			DATE_FORMAT(P.date, '%Y-%m-%d %H:%i:%s') AS date,
+			P.price,
+			S.nontradable
+		FROM bcd_price_day P, bcd_stock_master S
+		WHERE P.marketCode = #{marketCode}
+		  AND P.stockCode = S.stockCode
+		  AND P.stockCode = #{stockCode}
+		  AND P.date = ( SELECT
+							 MAX(date)
+						 FROM bcd_price_day
+						 WHERE stockCode = #{stockCode} 
+						   AND date &lt; #{date} )
+    </select>
+    
+    <!-- Stock 분봉 데이터 인서트, 시작시간에 없을 경우에만 인서트 된다. -->
+    <select id="insertPriceMinute" parameterType="com.skp.bmwcd.dto.Price">
+        INSERT INTO bcd_price_minute (stockCode, marketCode, date, diffCode, price, open, high, low, volume)
+        VALUES (#{stockCode}, #{marketCode}, #{date}, #{diffCode}, #{price}, #{open}, #{high}, #{low}, #{volume})
+    </select>
+    
+    <!-- Stock 일봉 데이터 리턴 -->
+    <select id="getStockDaily" parameterType="Map" resultType="com.skp.bmwcd.dto.Price">
+        SELECT
+			P.stockCode,
+			P.marketCode,
+			SUBSTRING(S.shortCode, 2, 7) AS shortCode,
+			S.hname AS hname,
+			S.ename AS ename,
+			DATE_FORMAT(P.date, '%Y-%m-%d') AS date,
+			P.price,
+			P.volume,
+			S.nontradable
+		FROM bcd_price_day P, bcd_stock_master S
+		WHERE P.marketCode = S.marketCode
+		  AND P.stockCode = S.stockCode
+		  AND P.marketCode = #{marketCode}
+		  AND P.stockCode = #{stockCode}
+		  AND P.date BETWEEN #{startDate} AND #{endDate}
+		  AND S.date = ( SELECT MAX(date) FROM bcd_stock_master )
+		ORDER BY P.date ASC
+    </select>
+    
+    <!-- Stock 일봉 데이터 인서트, 시작날짜에 없을 경우에만 인서트 된다. -->
+    <select id="insertPriceDay" parameterType="com.skp.bmwcd.dto.Price">
+        INSERT INTO bcd_price_day (stockCode, marketCode, date, price, volume)
+        VALUES (#{stockCode}, #{marketCode}, #{date}, #{price}, #{volume})
+    </select>
+    
+</mapper>

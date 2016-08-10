@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="com.skp.bmwcd.dao.ServerStateMapper">
+    
+    <select id="getServerStateList" resultType="com.skp.bmwcd.dto.ServerState">
+        SELECT 
+			@NUM := @NUM + 1 AS no,
+			S.serverId AS serverId,
+			S.type AS type,
+			S.date AS date
+		FROM ( SELECT @NUM := 0 ) R,
+			 ( SELECT 
+				   serverId,
+				   type,
+				   DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') AS date
+			   FROM bcd_server_state 
+			   ORDER BY type DESC ) S
+    </select>
+    
+</mapper>

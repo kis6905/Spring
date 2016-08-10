@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="com.skp.bmwcd.dao.MakerMapper">
+    
+    <!-- makerId와 password에 맞는 maker 리턴 -->
+    <select id="getMakerOfmakerId" parameterType="Map" resultType="com.skp.bmwcd.dto.Maker">
+        SELECT
+        	makerId,
+        	password,
+        	name AS makerName
+        FROM bcd_maker
+        WHERE makerId = #{makerId}
+    </select>
+    
+    <!-- authKey가 유효한지 확인 -->
+    <select id="getMakerOfAuthKey" parameterType="String" resultType="com.skp.bmwcd.dto.Maker">
+		SELECT
+			serverIp,
+			status
+		FROM bcd_server
+		WHERE authKey = #{authKey}
+		  AND DATE_FORMAT(modifiedDate, '%Y-%m-%d') = DATE_FORMAT(SYSDATE(), '%Y-%m-%d')
+    </select>
+    
+    <!-- Maker 리턴 -->
+    <select id="getMaker" parameterType="String" resultType="com.skp.bmwcd.dto.Maker">
+        SELECT
+			M.makerId AS makerId,
+			M.password AS password,
+			M.name AS makerName,
+			S.serverIp AS serverIp,
+			S.authKey AS authKey,
+			S.status AS status,
+			S.failCnt AS failCnt,
+			S.modifiedDate AS serverModifiedDate
+		FROM bcd_maker M, bcd_server S
+		WHERE M.makerId = S.makerId
+		  AND M.makerId = #{makerId}
+    </select>
+    
+    <!-- modifiedDate, authKey 업데이트 -->
+    <update id="updateMaker" parameterType="Map">
+        UPDATE bcd_server
+        SET authKey = #{authKey}, modifiedDate = SYSDATE()
+        WHERE serverIp = #{serverIp}
+          AND makerId = #{makerId}
+    </update>
+    
+    <!-- 로그인 실패 횟수 한계 리턴 -->
+    <select id="getValidFailCnt" resultType="Integer">
+		SELECT
+			codeValue
+		FROM bcd_com_code
+		WHERE codeGroup = 12
+		  AND code = 0
+    </select>
+    
+    <!-- failCnt + 1 -->
+    <update id="updateFailCnt" parameterType="Map">
+		UPDATE bcd_server
+		SET failCnt = #{failCnt}, modifiedDate = SYSDATE()
+		WHERE serverIp = #{serverIp}
+          AND makerId = #{makerId}
+    </update>
+    
+    <!-- server 상태 수정 -->
+    <update id="updateStatus" parameterType="Map">
+		UPDATE bcd_server
+		SET status = #{status}, modifiedDate = SYSDATE()
+		WHERE serverIp = #{serverIp}
+          AND makerId = #{makerId}
+    </update>
+    
+</mapper>

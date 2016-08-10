@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="com.skp.bmwcd.dao.MarketMapper">
+    
+    <!-- 현재시간의 Market 정보 리스트 리턴, 과거 특정일의 index 조회가 필요할 경우 수정 필요! -->
+    <select id="getMarketInfoListOfNowDate" parameterType="Map" resultType="com.skp.bmwcd.dto.Market">
+		SELECT 
+			T.marketCode,
+			T.hname,
+			T.ename,
+			T.date,
+			T.`index`,
+			T.diff,
+			T.volume,
+			T.tradingValue,
+			IF( DATE_FORMAT(T.date, '%Y-%m-%d') = SUBSTRING(#{nowDateTime}, 1, 10), 
+			    IF( ( SELECT COUNT(date)
+				      FROM bcd_index
+		              WHERE marketCode = T.marketCode
+				        AND date > #{nowDateTime} ) = 0, 'Close', 'Open' ),
+			    'Close' ) AS marketStatus,
+			T.`index` - T.diff AS previousClose
+		FROM ( SELECT 
+				   I.marketCode,
+				   M.hname,
+				   M.ename,
+				   DATE_FORMAT(I.date, '%Y-%m-%d %H:%i:%s') AS date,
+				   I.`index`,
+				   I.diff,
+				   I.volume,
+				   I.tradingValue
+				FROM bcd_index I, bcd_market_master M
+				WHERE I.marketCode = M.marketCode
+				  AND date = ( SELECT DATE_FORMAT(MAX(date), '%Y-%m-%d %H:%i:%s')
+						 	   FROM bcd_index
+						 	   WHERE marketCode = M.marketCode
+                           	     AND date &lt;= #{nowDateTime} ) ) AS T
+		GROUP BY marketCode
+		ORDER BY 
+			<choose>
+			    <when test="sortBy != null and order == null">
+			        `${sortBy}` ASC, marketCode ASC
+			    </when>
+			    <when test="sortBy == null and order != null">
+			        marketCode ${order}
+			    </when>
+			    <when test="sortBy != null and order != null">
+			        `${sortBy}` ${order}, marketCode ASC
+			    </when>
+			    <otherwise>
+			        marketCode ASC
+			    </otherwise>
+			</choose>
+		<if test="limit >= 0">
+			LIMIT ${limit}
+		</if>
+    </select>
+    
+    <!-- Market 리스트 리턴 -->
+    <select id="getMarketList" parameterType="Map" resultType="com.skp.bmwcd.dto.Market">
+        SELECT
+        	marketCode,
+        	hname,
+        	ename
+        FROM bcd_market_master
+        ORDER BY 
+			<choose>
+			    <when test="sortBy != null and order == null">
+			        ${sortBy} ASC, marketCode ASC
+			    </when>
+			    <when test="sortBy == null and order != null">
+			        marketCode ${order}
+			    </when>
+			    <when test="sortBy != null and order != null">
+			        ${sortBy} ${order}, marketCode ASC
+			    </when>
+			    <otherwise>
+			        marketCode ASC
+			    </otherwise>
+			</choose>
+		<if test="limit >= 0">
+			LIMIT ${limit}
+		</if>
+    </select>
+    
+    <!-- Market의 Top 100 리스트 리턴 -->
+    <select id="getTopListOfMarket" parameterType="String" resultType="com.skp.bmwcd.dto.Price">
+        SELECT 
+			M.hname,
+			M.ename,
+			C.stockCode,
+			SUBSTRING(M.shortCode, 2, 7) AS shortCode,
+			C.marketCode, 
+			C.diffCode,
+			C.price, 
+			DATE_FORMAT(C.date, '%Y-%m-%d %H:%i:%s') AS date, 
+			C.updatedDate,
+			D.price AS previousClose, 
+			C.volume,
+			( ( C.price - D.price ) * 100 ) / D.price AS rate 
+		FROM bcd_stock_master M,
+		     ( SELECT stockCode, marketCode, price, date, diffCode, updatedDate, volume
+		       FROM bcd_price_day
+		       WHERE marketCode = #{marketCode}
+				 AND date = ( SELECT MAX(date) FROM bcd_price_day )
+		     ) C, 
+		     ( SELECT A.stockCode, A.marketCode, A.price, A.date
+		       FROM bcd_price_day A,
+		            ( SELECT stockCode, marketCode, MAX(date) AS date
+		              FROM bcd_price_day
+		              WHERE marketCode = #{marketCode}
+						AND date &lt; ( SELECT MAX(date) FROM bcd_price_day )
+		              GROUP BY stockCode
+			        ) B
+		       WHERE A.stockCode = B.stockCode 
+				 AND A.marketCode = B.marketCode 
+				 AND A.date = B.date
+		     ) D
+		WHERE M.stockCode = C.stockCode
+		  AND M.marketCode = C.marketCode
+		  AND C.stockCode = D.stockCode
+		  AND C.marketCode = D.marketCode
+		  AND M.date = ( SELECT MAX(date) FROM bcd_stock_master )
+		ORDER BY rate ${topKind}, shortCode ASC
+		LIMIT 100
+    </select>
+    
+    <!-- Market의 장 시작 시간 리턴 -->
+    <select id="getMarketStartDate" parameterType="String" resultType="String">
+		SELECT
+			DATE_FORMAT(MIN(date), '%Y-%m-%d %H:%i:%s')
+		FROM bcd_index_minute
+		WHERE marketCode = #{marketCode}
+		  AND DATE_FORMAT(date, '%Y-%m-%d') = ( SELECT DATE_FORMAT(MAX(date), '%Y-%m-%d') FROM bcd_index_minute )
+    </select>
+    
+    <!-- 현재시간-20분 기준, 장 마감 시간 리턴 -->
+    <select id="getMarketEndDate" parameterType="String" resultType="String">
+		SELECT
+			DATE_FORMAT(MAX(date), '%Y-%m-%d %H:%i:%s')
+		FROM bcd_index_minute
+		WHERE marketCode = #{marketCode}
+		  AND DATE_FORMAT(date, '%Y-%m-%d') = ( SELECT DATE_FORMAT(MAX(date), '%Y-%m-%d') FROM bcd_index_minute)
+    </select>
+    
+    <!-- Market의 장 시작시간부터 마감시간까지의 분 단위 시간 리스트 리턴 -->
+    <select id="getMarketTimeList" parameterType="Map" resultType="String">
+        SELECT
+			DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') AS date
+		FROM bcd_index_minute
+		WHERE marketCode = #{marketCode}
+		  AND DATE_FORMAT(date, '%Y-%m-%d') = #{date}
+    </select>
+    
+    <!-- 해당 기간 동안의 장이 열린 Market의 날짜 리스트 리턴 -->
+    <select id="getMarketDateList" parameterType="Map" resultType="String">
+        SELECT
+			DATE_FORMAT(date, '%Y-%m-%d') AS date
+		FROM bcd_index_day
+		WHERE marketCode = #{marketCode}
+		  AND date BETWEEN #{startDate} AND #{endDate}
+    </select>
+    
+    <!-- Market Status 리턴 -->
+    <select id="getMarketStatus" parameterType="Map" resultType="String">
+		SELECT 
+			IF( DATE_FORMAT(T.date, '%Y-%m-%d') = SUBSTRING(#{nowDateTime}, 1, 10),
+			IF( ( SELECT COUNT(date)
+			      FROM bcd_index
+			      WHERE marketCode = #{marketCode}
+			        AND date > #{nowDateTime} ) = 0, 'Close', 'Open' ),
+			'Close' )
+		FROM ( SELECT 
+				   I.date AS date
+			   FROM bcd_index I, bcd_market_master M
+			   WHERE I.marketCode =  M.marketCode
+			   	 AND I.marketCode = #{marketCode}
+				 AND date &lt;= #{nowDateTime}
+			   ORDER BY date DESC 
+			   LIMIT 1 ) AS T
+    </select>
+    
+</mapper>

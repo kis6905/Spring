@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="com.skp.bmwcd.dao.RequestHistoryMapper">
+    
+    <!-- Request History 등록 -->
+    <insert id="insertRequestHistory" parameterType="Map">
+        INSERT INTO bcd_request_history (seq, requestDate, requestCodeGroup, requestCode, makerId)
+		VALUES (IFNULL((SELECT MAX(seq) FROM bcd_request_history AS A) + 1, 1), SYSDATE(), 5, #{requestCode},
+				<choose>
+				    <when test="authKey != null">
+				    	( SELECT M.makerId
+						  FROM bcd_maker M, bcd_server S
+						  WHERE M.makerId = S.makerId 
+						    AND S.authKey = #{authKey} )
+				    </when>
+				    <otherwise>
+				        #{makerId}
+				    </otherwise>
+				</choose> 
+			    )
+    </insert>
+    
+</mapper>
