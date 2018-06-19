@@ -3,7 +3,8 @@
 
 ## Technology Stack
 * Spring Boot 1.5.14 (Spring 4.3.18)
-* Security + JWT
+* Security
+* JWT
 * REST
 * GraphQL
 * Swagger2
