@@ -1,15 +1,15 @@
 ## Overview
 * Spring Boot API Server Template
+
+## Tech Stack
 * Spring Boot 1.5.14(Spring4.3.18)
 * Security + JWT
 * REST
 * GraphQL
 * Swagger2
 
-
 ## Requirements
 * lombok
-
 
 ## Reference
 * Security + JWT
