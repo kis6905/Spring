@@ -6,13 +6,10 @@
 * GraphQL
 * Swagger2
 
+
 ## Requirements
 * lombok
 
-## Stack
-* Spring Security
-* JWT
-* GraphQL
 
 ## Reference
 * Security + JWT
