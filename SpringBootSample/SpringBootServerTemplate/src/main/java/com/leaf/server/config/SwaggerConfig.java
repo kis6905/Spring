@@ -58,7 +58,7 @@ public class SwaggerConfig {
         return new ApiInfoBuilder()
                 .title("Server API")
                 .description("Server API를 정의한 문서입니다.")
-                .contact(new Contact("1leaf - github", "http://openobject.net", "openobject@openobject.net"))
+                .contact(new Contact("1leaf - github", "https://github.com/kis6905", "kis6905@gmail.com"))
                 .version("0.1")
                 .build();
     }
