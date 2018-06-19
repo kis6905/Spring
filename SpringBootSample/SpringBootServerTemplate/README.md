@@ -13,6 +13,6 @@
 
 ## Reference
 * Security + JWT
-    * [jwt.io] (https://jwt.io/)
-    * [Spring Boot - Security + JWT] (http://heowc.tistory.com/46)
-    * [Spring security JWT 연동] (http://yookeun.github.io/java/2017/07/23/spring-jwt/)
+    * [jwt.io](https://jwt.io/)
+    * [Spring Boot - Security + JWT](http://heowc.tistory.com/46)
+    * [Spring security JWT 연동](http://yookeun.github.io/java/2017/07/23/spring-jwt/)
