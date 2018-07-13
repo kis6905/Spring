@@ -1,7 +1,7 @@
 ## Overview
 * Spring Boot API Server Template
 
-## Technology Stack
+## Tech Stack
 * Spring Boot 1.5.14 (Spring 4.3.18)
 * Security
 * JWT
