@@ -1,7 +1,7 @@
 ## Overview
 * Spring Boot API Server Template
 
-## Technology Stack
+## Tech Stack
 * Spring Boot 1.5.14 (Spring 4.3.18)
 * Security
 * JWT
@@ -13,6 +13,4 @@
 * lombok
 
 ## Reference
-* Security + JWT
-    * [jwt.io](https://jwt.io/)
-    * [Spring Boot - Security + JWT](http://heowc.tistory.com/46)
+* (https://medium.com/oril/spring-boot-graphql-mongodb-8733002b728a)
