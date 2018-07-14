@@ -23,7 +23,7 @@
     </rollingPolicy>
   </appender>
   
-  <logger name="net.o2.managing" level="${LOG_LEVEL}" additivity="false">
+  <logger name="com.leaf.server" level="${LOG_LEVEL}" additivity="false">
     <appender-ref ref="console" />
 <!--     <appender-ref ref="file" /> -->
   </logger>
