@@ -1,18 +1,19 @@
-## Overview
+## 개요
 * Spring Boot API Server Template
 
-## Tech Stack
+## 빌드
 * Spring Boot 1.5.14 (Spring 4.3.18)
+* Maven
+* lombok
+
+## 기술 스택
 * Security
 * JWT
 * REST
 * GraphQL
 * Swagger2
 
-## Requirements
-* lombok
-
-## Reference
+## 참고
 * Security + JWT
     * [jwt.io](https://jwt.io/)
     * [Spring Boot - Security + JWT](http://heowc.tistory.com/46)
