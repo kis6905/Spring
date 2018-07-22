@@ -10,3 +10,5 @@
 * JPA
 * H2
 
+## TODO
+* 현재 OneToOne만 구현해봤다. OneToMany, ManyToOne 등도 써볼 것!
