@@ -1,4 +1,4 @@
-## What is this Repository?
+## What is this repository?
 * Spring Sample 코드를 모아두는 공간입니다!
 
 ## 언젠가
