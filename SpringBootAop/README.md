@@ -1,5 +1,5 @@
 ## 개요
-* Spring Boot AOP
+* Spring Boot AOP Sample
 * AOP를 이용해 Request parameter logging
 
 ## 빌드
