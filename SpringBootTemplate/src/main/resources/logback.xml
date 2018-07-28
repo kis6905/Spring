@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <property name="LOG_PATH" value="/data/logs/leanmaker" />
+  <property name="LOG_PATH" value="/data/logs/" />
   <property name="LOG_LEVEL" value="info" />
   
   <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
@@ -11,7 +11,7 @@
   </appender>
   
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${LOG_PATH}/managing.log</file>
+    <file>${LOG_PATH}/app.log</file>
     <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
       <Pattern>%-5level [%d{yyyy-MM-dd HH:mm:ss.SSS}] %c{1} %M\(\):%L - %m%n</Pattern>
     </encoder>
