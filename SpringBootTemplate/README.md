@@ -17,6 +17,6 @@
 * Security + JWT
     * [jwt.io](https://jwt.io/)
     * [Spring Boot - Security + JWT](http://heowc.tistory.com/46)
-    * (https://velopert.com/2389)
+    * https://velopert.com/2389
 * GraphQL
     * https://medium.com/oril/spring-boot-graphql-mongodb-8733002b728a
