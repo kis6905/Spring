@@ -27,6 +27,7 @@ public class SampleHandler {
 		
 		log.info("-> []");
 		
+		// TODO: Flux로 어떻게 변경해주지?
 		return Mono.fromCompletionStage(sampleService.findAll())
 				.flatMap(member -> ServerResponse.ok().contentType(APPLICATION_JSON).body(fromObject(member)))
 				.switchIfEmpty(ServerResponse.notFound().build());
