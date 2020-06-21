@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.develeaf.study.sample.entity.TeamEntity;
 import com.develeaf.study.sample.entity.UserEntity;
 import com.develeaf.study.sample.service.UserService;
 
@@ -31,6 +32,12 @@ public class UserController {
 		UserEntity entity = userService.getUserByName(name);
 		log.debug("entity: {}", entity.toString());
 		return entity;
+	}
+	
+	@GetMapping("/teams")
+	public List<TeamEntity> getTeams() {
+		List<TeamEntity> list = userService.getTeamList();
+		return list;
 	}
 	
 }
