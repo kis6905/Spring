@@ -13,8 +13,6 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,7 +36,6 @@ public class UserEntity {
 	
 	@ManyToOne
 	@JoinColumn(name = "team_seq")
-	@JsonBackReference
 	private TeamEntity team;
 	
 	@ManyToMany

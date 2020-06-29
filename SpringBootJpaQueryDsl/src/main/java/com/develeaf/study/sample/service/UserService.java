@@ -31,7 +31,6 @@ public class UserService {
 	
 	@Transactional
 	public UserEntity getUserByName(String name) {
-		// Sample이라 Entity를 바로 리턴
 		UserEntity entity = userRepository.findByName(name);
 		log.debug("entity: {}", entity);
 		return entity;

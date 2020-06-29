@@ -1,16 +1,11 @@
 package com.develeaf.study.sample.entity;
 
-import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,8 +26,8 @@ public class TeamEntity {
 	@Column(length = 255, nullable = true)
 	private String name;
 	
-	@OneToMany(mappedBy = "team")
-	@JsonManagedReference
-	private List<UserEntity> userList;
+//	@OneToMany(mappedBy = "team")
+//	@JsonManagedReference
+//	private List<UserEntity> userList;
 	
 }
